@@ -1,0 +1,65 @@
+"""
+intent_detector.py
+Dedicated intent detection layer for Module 2.
+Maps normalized user inputs to predefined intent categories using rule-based pattern matching.
+"""
+
+# Intent category constants
+INTENT_GREETING = "greeting"
+INTENT_HELP = "help"
+INTENT_GOODBYE = "goodbye"
+INTENT_ABOUT_BOT = "about_bot"
+INTENT_UNKNOWN = "unknown"
+
+# Rule-based patterns and keywords for each intent
+GREETING_KEYWORDS = [
+    "hello", "hi", "hey", "greetings",
+    "good morning", "good evening", "good afternoon"
+]
+
+GOODBYE_KEYWORDS = [
+    "bye", "goodbye", "see you", "exit",
+    "quit", "cya", "farewell"
+]
+
+HELP_KEYWORDS = [
+    "help", "can you help me", "what can you do",
+    "commands", "options", "how do you work"
+]
+
+ABOUT_BOT_KEYWORDS = [
+    "who are you", "what are you", "tell me about yourself",
+    "about yourself", "what is your name", "who made you"
+]
+
+
+def detect_intent(cleaned_input: str) -> str:
+    """
+    Analyzes the normalized (lowercase, stripped) user input and returns the detected intent name.
+    """
+    # 1. Handle empty input
+    if not cleaned_input:
+        return INTENT_UNKNOWN
+
+    # 2. Check for Goodbye / Exit intent
+    if cleaned_input in GOODBYE_KEYWORDS:
+        return INTENT_GOODBYE
+
+    # 3. Check for About Bot intent (exact phrase match or substring match)
+    for pattern in ABOUT_BOT_KEYWORDS:
+        if pattern in cleaned_input:
+            return INTENT_ABOUT_BOT
+
+    # 4. Check for Help intent
+    for pattern in HELP_KEYWORDS:
+        if pattern in cleaned_input:
+            return INTENT_HELP
+
+    # 5. Check for Greeting intent
+    if cleaned_input in GREETING_KEYWORDS or any(
+        cleaned_input.startswith(f"{word} ") for word in ["hello", "hi", "hey"]
+    ):
+        return INTENT_GREETING
+
+    # 6. Fallback if no rules matched
+    return INTENT_UNKNOWN

@@ -1,19 +1,49 @@
 """
 main.py
-Entry point for the Rule-Based NLP Chatbot (Module 1).
-Manages the console interaction loop and connects normalization with rule processing.
+Entry point for the Rule-Based NLP Chatbot.
+Coordinates user input, preprocessing, intent detection, and response generation.
 """
 
 from preprocess import normalize_text
-from rules import get_response, is_exit_command
+from intent_detector import (
+    detect_intent,
+    INTENT_GREETING,
+    INTENT_HELP,
+    INTENT_GOODBYE,
+    INTENT_ABOUT_BOT,
+    INTENT_UNKNOWN,
+)
+
+# Intent to response mapping (separate from intent detection)
+RESPONSES = {
+    INTENT_GREETING: "Hello! How can I assist you today?",
+    INTENT_HELP: (
+        "Here is what I can do:\n"
+        "  - Greet you (e.g., 'hello', 'hi', 'hey')\n"
+        "  - Provide assistance (e.g., 'help')\n"
+        "  - Tell you about myself (e.g., 'who are you')\n"
+        "  - End the conversation (e.g., 'bye', 'goodbye', 'exit', 'quit')"
+    ),
+    INTENT_GOODBYE: "Goodbye! Have a great day!",
+    INTENT_ABOUT_BOT: "I am a rule-based NLP chatbot designed to understand basic user intents.",
+    INTENT_UNKNOWN: "I'm sorry, I don't understand that yet. Type 'help' to see what I can do.",
+}
+
+
+def get_response(intent: str) -> str:
+    """
+    Selects and returns an appropriate response based on the detected intent.
+    """
+    return RESPONSES.get(intent, RESPONSES[INTENT_UNKNOWN])
 
 
 def run_chatbot() -> None:
     """
-    Main loop that continuously accepts user input and responds until an exit command is given.
+    Main loop that continuously accepts user input, detects intent,
+    and responds until an exit/goodbye intent is triggered.
     """
     print("=" * 50)
-    print("Welcome to the Rule-Based Chatbot! (Module 1)")
+    print("Welcome to the Rule-Based Chatbot! (Module 2)")
     print("Type 'help' for available commands or 'exit' to quit.")
     print("=" * 50)
     print()
@@ -29,12 +59,15 @@ def run_chatbot() -> None:
         # Step 1: Normalize user input (lowercase & whitespace cleanup)
         cleaned_input = normalize_text(user_input)
 
-        # Step 2: Determine and print response based on rules
-        response = get_response(cleaned_input)
+        # Step 2: Detect intent (Intent Detection Layer)
+        intent = detect_intent(cleaned_input)
+
+        # Step 3: Select response based on detected intent (Response Generation Layer)
+        response = get_response(intent)
         print(f"Chatbot: {response}\n")
 
-        # Step 3: Check if an exit command was triggered
-        if is_exit_command(cleaned_input):
+        # Step 4: Check if conversation should end
+        if intent == INTENT_GOODBYE:
             break
 
 
