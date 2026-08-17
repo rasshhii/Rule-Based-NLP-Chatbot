@@ -9,7 +9,10 @@ INTENT_GREETING = "greeting"
 INTENT_HELP = "help"
 INTENT_GOODBYE = "goodbye"
 INTENT_ABOUT_BOT = "about_bot"
+INTENT_KNOWLEDGE_QUESTION = "knowledge_question"
 INTENT_UNKNOWN = "unknown"
+
+from topic_detector import detect_topic
 
 # Rule-based patterns and keywords for each intent
 GREETING_KEYWORDS = [
@@ -61,5 +64,9 @@ def detect_intent(cleaned_input: str) -> str:
     ):
         return INTENT_GREETING
 
-    # 6. Fallback if no rules matched
+    # 6. Check for Knowledge Question intent (matched against topics in knowledge base)
+    if detect_topic(cleaned_input) is not None:
+        return INTENT_KNOWLEDGE_QUESTION
+
+    # 7. Fallback if no rules matched
     return INTENT_UNKNOWN
