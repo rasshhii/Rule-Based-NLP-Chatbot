@@ -1,7 +1,8 @@
 """
 main.py
-Entry point for the Rule-Based NLP Chatbot (Module 3).
-Coordinates user input, preprocessing, intent detection, topic detection, and response generation.
+Entry point for the Rule-Based NLP Chatbot (Module 4).
+Coordinates user input, preprocessing, intent detection, exact topic detection,
+similarity-based fallback matching, and response generation.
 """
 
 from preprocess import normalize_text
@@ -15,6 +16,7 @@ from intent_detector import (
     INTENT_UNKNOWN,
 )
 from topic_detector import detect_topic
+from similarity_matcher import find_similar_topic
 from knowledge_base import get_knowledge
 
 # Unsupported knowledge topic guidance response
@@ -43,15 +45,27 @@ RESPONSES = {
 def get_response(intent: str, cleaned_input: str = "") -> str:
     """
     Selects and returns an appropriate response based on the detected intent.
-    For knowledge questions, dynamically resolves the topic and retrieves the answer.
+    For knowledge questions:
+    1. First attempts exact topic matching via detect_topic().
+    2. If no exact match is found, falls back to TF-IDF similarity via find_similar_topic().
+    3. If neither matches, returns guidance on supported topics.
     """
     # Dynamic response generation for knowledge-base questions
     if intent == INTENT_KNOWLEDGE_QUESTION:
+        # Step 1: Try exact keyword/topic matching first
         topic = detect_topic(cleaned_input)
+
+        # Step 2: Fall back to TF-IDF cosine similarity if exact match fails
+        if not topic:
+            similar_topic, _ = find_similar_topic(cleaned_input)
+            topic = similar_topic
+
+        # Step 3: Retrieve knowledge if a topic was determined
         if topic:
             answer = get_knowledge(topic)
             if answer:
                 return answer
+
         return UNSUPPORTED_TOPIC_RESPONSE
 
     # Static response lookup for standard conversational intents
@@ -60,11 +74,11 @@ def get_response(intent: str, cleaned_input: str = "") -> str:
 
 def run_chatbot() -> None:
     """
-    Main loop that continuously accepts user input, processes intent and topic,
-    and responds until an exit/goodbye intent is triggered.
+    Main loop that continuously accepts user input, processes intent, topic,
+    and similarity matching, and responds until an exit/goodbye intent is triggered.
     """
     print("=" * 50)
-    print("Welcome to the Rule-Based Chatbot! (Module 3)")
+    print("Welcome to the Rule-Based Chatbot! (Module 4)")
     print("Type 'help' for available commands or 'exit' to quit.")
     print("=" * 50)
     print()

@@ -13,6 +13,7 @@ INTENT_KNOWLEDGE_QUESTION = "knowledge_question"
 INTENT_UNKNOWN = "unknown"
 
 from topic_detector import detect_topic
+from similarity_matcher import find_similar_topic
 
 # Rule-based patterns and keywords for each intent
 GREETING_KEYWORDS = [
@@ -69,9 +70,11 @@ def detect_intent(cleaned_input: str) -> str:
     ):
         return INTENT_GREETING
 
-    # 6. Check for Knowledge Question intent (topic match or informational question phrasing)
-    if detect_topic(cleaned_input) is not None or any(
-        pattern in cleaned_input for pattern in QUESTION_PATTERNS
+    # 6. Check for Knowledge Question intent (exact topic match, similarity match, or question phrasing)
+    if (
+        detect_topic(cleaned_input) is not None
+        or find_similar_topic(cleaned_input)[0] is not None
+        or any(pattern in cleaned_input for pattern in QUESTION_PATTERNS)
     ):
         return INTENT_KNOWLEDGE_QUESTION
 
