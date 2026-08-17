@@ -35,6 +35,11 @@ ABOUT_BOT_KEYWORDS = [
     "about yourself", "what is your name", "who made you"
 ]
 
+QUESTION_PATTERNS = [
+    "what is", "what are", "what does", "tell me about",
+    "explain", "describe", "define", "meaning of"
+]
+
 
 def detect_intent(cleaned_input: str) -> str:
     """
@@ -64,8 +69,10 @@ def detect_intent(cleaned_input: str) -> str:
     ):
         return INTENT_GREETING
 
-    # 6. Check for Knowledge Question intent (matched against topics in knowledge base)
-    if detect_topic(cleaned_input) is not None:
+    # 6. Check for Knowledge Question intent (topic match or informational question phrasing)
+    if detect_topic(cleaned_input) is not None or any(
+        pattern in cleaned_input for pattern in QUESTION_PATTERNS
+    ):
         return INTENT_KNOWLEDGE_QUESTION
 
     # 7. Fallback if no rules matched

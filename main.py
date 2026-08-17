@@ -1,7 +1,7 @@
 """
 main.py
-Entry point for the Rule-Based NLP Chatbot.
-Coordinates user input, preprocessing, intent detection, and response generation.
+Entry point for the Rule-Based NLP Chatbot (Module 3).
+Coordinates user input, preprocessing, intent detection, topic detection, and response generation.
 """
 
 from preprocess import normalize_text
@@ -11,10 +11,19 @@ from intent_detector import (
     INTENT_HELP,
     INTENT_GOODBYE,
     INTENT_ABOUT_BOT,
+    INTENT_KNOWLEDGE_QUESTION,
     INTENT_UNKNOWN,
 )
+from topic_detector import detect_topic
+from knowledge_base import get_knowledge
 
-# Intent to response mapping (separate from intent detection)
+# Unsupported knowledge topic guidance response
+UNSUPPORTED_TOPIC_RESPONSE = (
+    "I can currently answer questions about AI, Machine Learning, NLP, Python, and AI Engineering. "
+    "Please ask about one of these topics."
+)
+
+# Intent to static response mapping (for conversational intents)
 RESPONSES = {
     INTENT_GREETING: "Hello! How can I assist you today?",
     INTENT_HELP: (
@@ -22,6 +31,7 @@ RESPONSES = {
         "  - Greet you (e.g., 'hello', 'hi', 'hey')\n"
         "  - Provide assistance (e.g., 'help')\n"
         "  - Tell you about myself (e.g., 'who are you')\n"
+        "  - Answer questions about AI, Machine Learning, NLP, Python, and AI Engineering\n"
         "  - End the conversation (e.g., 'bye', 'goodbye', 'exit', 'quit')"
     ),
     INTENT_GOODBYE: "Goodbye! Have a great day!",
@@ -30,20 +40,31 @@ RESPONSES = {
 }
 
 
-def get_response(intent: str) -> str:
+def get_response(intent: str, cleaned_input: str = "") -> str:
     """
     Selects and returns an appropriate response based on the detected intent.
+    For knowledge questions, dynamically resolves the topic and retrieves the answer.
     """
+    # Dynamic response generation for knowledge-base questions
+    if intent == INTENT_KNOWLEDGE_QUESTION:
+        topic = detect_topic(cleaned_input)
+        if topic:
+            answer = get_knowledge(topic)
+            if answer:
+                return answer
+        return UNSUPPORTED_TOPIC_RESPONSE
+
+    # Static response lookup for standard conversational intents
     return RESPONSES.get(intent, RESPONSES[INTENT_UNKNOWN])
 
 
 def run_chatbot() -> None:
     """
-    Main loop that continuously accepts user input, detects intent,
+    Main loop that continuously accepts user input, processes intent and topic,
     and responds until an exit/goodbye intent is triggered.
     """
     print("=" * 50)
-    print("Welcome to the Rule-Based Chatbot! (Module 2)")
+    print("Welcome to the Rule-Based Chatbot! (Module 3)")
     print("Type 'help' for available commands or 'exit' to quit.")
     print("=" * 50)
     print()
@@ -62,8 +83,8 @@ def run_chatbot() -> None:
         # Step 2: Detect intent (Intent Detection Layer)
         intent = detect_intent(cleaned_input)
 
-        # Step 3: Select response based on detected intent (Response Generation Layer)
-        response = get_response(intent)
+        # Step 3: Select response (Response Generation Layer)
+        response = get_response(intent, cleaned_input)
         print(f"Chatbot: {response}\n")
 
         # Step 4: Check if conversation should end
