@@ -1,8 +1,8 @@
 """
 main.py
-Entry point for the Rule-Based NLP Chatbot (Module 4).
+Entry point for the Rule-Based NLP Chatbot (Module 5).
 Coordinates user input, preprocessing, intent detection, exact topic detection,
-similarity-based fallback matching, and response generation.
+similarity-based fallback matching, confidence scoring, and smart fallback responses.
 """
 
 from preprocess import normalize_text
@@ -17,12 +17,14 @@ from intent_detector import (
 )
 from topic_detector import detect_topic
 from similarity_matcher import find_similar_topic
+from confidence import should_accept_prediction
 from knowledge_base import get_knowledge
 
-# Unsupported knowledge topic guidance response
-UNSUPPORTED_TOPIC_RESPONSE = (
-    "I can currently answer questions about AI, Machine Learning, NLP, Python, and AI Engineering. "
-    "Please ask about one of these topics."
+# Smart fallback response for low-confidence or unsupported knowledge topics
+SMART_FALLBACK_RESPONSE = (
+    "I'm not confident I understood the topic. I can currently help with AI, "
+    "Machine Learning, NLP, Python, and AI Engineering. Could you rephrase your "
+    "question or mention one of these topics?"
 )
 
 # Intent to static response mapping (for conversational intents)
@@ -45,28 +47,33 @@ RESPONSES = {
 def get_response(intent: str, cleaned_input: str = "") -> str:
     """
     Selects and returns an appropriate response based on the detected intent.
+
     For knowledge questions:
     1. First attempts exact topic matching via detect_topic().
-    2. If no exact match is found, falls back to TF-IDF similarity via find_similar_topic().
-    3. If neither matches, returns guidance on supported topics.
+    2. If exact matching fails, falls back to TF-IDF similarity via find_similar_topic().
+    3. Evaluates prediction confidence using should_accept_prediction().
+    4. If confidence is sufficient, returns the knowledge answer; otherwise returns smart fallback.
     """
     # Dynamic response generation for knowledge-base questions
     if intent == INTENT_KNOWLEDGE_QUESTION:
-        # Step 1: Try exact keyword/topic matching first
+        # Step 1: Exact keyword/topic matching takes first priority
         topic = detect_topic(cleaned_input)
-
-        # Step 2: Fall back to TF-IDF cosine similarity if exact match fails
-        if not topic:
-            similar_topic, _ = find_similar_topic(cleaned_input)
-            topic = similar_topic
-
-        # Step 3: Retrieve knowledge if a topic was determined
         if topic:
             answer = get_knowledge(topic)
             if answer:
                 return answer
 
-        return UNSUPPORTED_TOPIC_RESPONSE
+        # Step 2: Fall back to TF-IDF cosine similarity matching
+        similar_topic, score = find_similar_topic(cleaned_input)
+
+        # Step 3: Confidence evaluation layer decides whether to accept prediction
+        if should_accept_prediction(score) and similar_topic:
+            answer = get_knowledge(similar_topic)
+            if answer:
+                return answer
+
+        # Step 4: Low confidence / unsupported topic smart fallback
+        return SMART_FALLBACK_RESPONSE
 
     # Static response lookup for standard conversational intents
     return RESPONSES.get(intent, RESPONSES[INTENT_UNKNOWN])
@@ -75,10 +82,10 @@ def get_response(intent: str, cleaned_input: str = "") -> str:
 def run_chatbot() -> None:
     """
     Main loop that continuously accepts user input, processes intent, topic,
-    and similarity matching, and responds until an exit/goodbye intent is triggered.
+    similarity matching, and confidence evaluation, and responds until exit.
     """
     print("=" * 50)
-    print("Welcome to the Rule-Based Chatbot! (Module 4)")
+    print("Welcome to the Rule-Based Chatbot! (Module 5)")
     print("Type 'help' for available commands or 'exit' to quit.")
     print("=" * 50)
     print()
